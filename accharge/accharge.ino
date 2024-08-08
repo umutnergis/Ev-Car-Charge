@@ -3,11 +3,11 @@
 #include "PWM.h"
 #include <SPI.h>
 #include <Wire.h>
-#include "EmonLib.h"     // Include Emon Library
+#include "EmonLib.h"     
 
-//#define DEBUG
+#define DEBUG
 EnergyMonitor emon1;
-EnergyMonitor emon2; // Create an instance
+EnergyMonitor emon2; 
 EnergyMonitor emon3;
 
 #define CP_OUT 10
@@ -17,7 +17,7 @@ EnergyMonitor emon3;
 #define txPin 5
 #define tempertaturepin A7
 
-SoftwareSerial mySerial(rxPin, txPin); // RX, TX
+SoftwareSerial mySerial(rxPin, txPin); 
 String receivedData = "";
 
 int current1 = 0;

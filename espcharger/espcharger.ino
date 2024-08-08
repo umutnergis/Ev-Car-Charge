@@ -17,8 +17,8 @@ TaskHandle_t Task2;
 unsigned long lastReconnectAttempt = 0;
 const unsigned long reconnectInterval = 30000;
 
-const char* ssid = "iPhone";
-const char* password = "yusuf12345";
+const char* ssid = "xxxxxx";
+const char* password = "xxxxxx";
 const char* hostname = "EV-Charger";
 WebServer server(80);
 int check_internet = 0;
