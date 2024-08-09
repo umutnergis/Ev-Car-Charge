@@ -1,3 +1,8 @@
+//Bluetooth ile haberleşme yapılacak.
+//Python gui yapılacak.
+//Ip bilgileri ekrana gönderilecek.
+
+
 #include <WiFi.h>
 #include <WebServer.h>
 #include <string.h>
