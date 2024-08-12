@@ -3,21 +3,99 @@
 #include <DNSServer.h>
 #include <string.h>
 
-const char *ssid = "Solar_Charger";
-const char *password = "12345678";
-String charge_sit = "Solar Şarj İstasyonu";
-String amper_sit = "";
+//#define DEBUG
+#define check10A 0x20 
+#define check16A 0x21 
+#define check24A 0x22 
+#define check32A 0x23
 
+#define RXp2 16
+#define TXp2 17
+
+TaskHandle_t Task1;
+TaskHandle_t Task2;
+
+const char *ssid = "Şarj_Global";
+const char *password = "12345678";
 const byte DNS_PORT = 53;
 IPAddress apIP(192, 168, 4, 1);
 DNSServer dnsServer;
 WebServer server(80);
 
-int kwh = 50; 
+String receivedData = "";
+int kwh = 0;
+int voltage1 = 0, voltage2 = 0, voltage3 = 0;
+int current1 = 0, current2 = 0, current3 = 0;
+int temperature = 0;
+int coming_pvc =0;
+int coming_critical=0;
+unsigned long previousMillis = 0;
+
+String charge_sit = "NO";
+String amper_sit = "0 A";
+
+void thread1(void* pvParameters);
+void thread2(void* pvParameters);
 
 void setup() {
   Serial.begin(115200);
+  Serial2.begin(9600, SERIAL_8N1, RXp2, TXp2);
+  delay(500);
 
+  xTaskCreatePinnedToCore(thread1, "Task1", 10000, NULL, 1, &Task1, 0);
+  xTaskCreatePinnedToCore(thread2, "Task2", 5000, NULL, 1, &Task2, 1);
+
+  acces_point();
+}
+
+void loop() {
+
+}
+
+void thread2(void* pvParameters) {
+  #ifdef DEBUG
+  Serial.println("Thread2 başladı");
+  #endif
+  for(;;) {
+    dnsServer.processNextRequest();
+    server.handleClient();
+    vTaskDelay(pdMS_TO_TICKS(100));
+  }
+}
+
+void thread1(void* pvParameters) {
+  #ifdef DEBUG
+  Serial.println("Thread1 başladı");
+  #endif 
+  for(;;) {
+    if(Serial2.available()) {
+      char c = Serial2.read();
+      receivedData += c;
+      //Serial.println("Data geldi");
+      if (c == '\n') {
+        #ifdef DEBUG
+        Serial2.println(receivedData);
+        #endif
+        parsedata(receivedData);
+        receivedData = "";
+      }
+    }
+
+    //kwh = ((230*current1*0.9)+(230*current2*0.9)+(230*current3*0.9)); 
+    kwh++;
+    if(Serial.available()) {
+      byte incomingByte = Serial.read();
+      #ifdef DEBUG
+      Serial.println(incomingByte, HEX);
+      #endif
+      check_button(incomingByte);
+    }
+    sendFunction();
+    vTaskDelay(pdMS_TO_TICKS(50));
+  }
+}
+
+void acces_point() {
   WiFi.softAP(ssid, password);
   WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
   Serial.println("Access Point Başlatıldı");
@@ -25,13 +103,9 @@ void setup() {
   IPAddress IP = WiFi.softAPIP();
   Serial.print("AP IP adresi: ");
   Serial.println(IP);
-
-  // DNS yönlendirmesi (herhangi bir URL'yi IP adresine yönlendir)
   dnsServer.start(DNS_PORT, "*", IP);
-  
-  // Ana sayfa ve herhangi bir sayfa isteği için yönlendirme
-  server.on("/", handleRoot); // Ana sayfa isteği için handleRoot işlevini kullan
-  server.on("/status", handleStatus); // /number isteği için handleNumber işlevini kullan
+  server.on("/", handleRoot); 
+  server.on("/status", handleStatus);
   server.on("/number", handleNumber);
   server.on("/button1", handleButton1);
   server.on("/button2", handleButton2);
@@ -40,15 +114,7 @@ void setup() {
   server.on("/start", handleStart);
   server.on("/stop", handleStop);
 
-  // Web sunucusunu başlatma
   server.begin();
-  Serial.println("Web sunucusu başlatıldı");
-}
-
-void loop() {
-  // DNS ve Web sunucusu isteklerini dinleme
-  dnsServer.processNextRequest();
-  server.handleClient();
 }
 
 void handleRoot() {
@@ -140,7 +206,7 @@ void handleRoot() {
                 })
                 .catch(error => console.error('Hata:', error));
         }
-        setInterval(fetchNumber, 500);
+        setInterval(fetchNumber, 300);
 
         function fetchStatus() {
             fetch('/status')
@@ -150,7 +216,7 @@ void handleRoot() {
                 })
                 .catch(error => console.error('Durum alma hatası:', error));
         }
-        setInterval(fetchStatus, 1000);
+        setInterval(fetchStatus, 300);
 
         function sendCommand(command) {
             fetch('/' + command)
@@ -164,36 +230,145 @@ void handleRoot() {
 </body>
 </html>
 )rawliteral";
-
   server.send(200, "text/html", html);
 }
 
 void handleNumber() {
   server.send(200, "text/plain", String(kwh));
 }
+
 void handleStatus() {
-  server.send(200, "text/plain", charge_sit +" "+ amper_sit);
-}
+  String data = "{\"number\":" + String(kwh) + ",\"status\":\"" + charge_sit + " " + amper_sit + "\"}";
+  server.send(200, "application/json", data);
+  }
 
 void handleButton1() {
   amper_sit = "10 A";
+  Serial2.println("st42");
 }
 
 void handleButton2() {
   amper_sit = "16 A";
+  Serial2.println("st68");
 }
 
 void handleButton3() {
   amper_sit = "24 A";
+  Serial2.println("st102");
 }
 
 void handleButton4() {
   amper_sit = "32 A";
+  Serial2.println("st135");
 }
 
 void handleStart() {
-  charge_sit = "ÇALIŞIYOR";
+  charge_sit = "ON";
 }
+
 void handleStop() {
-  charge_sit = "ÇALIŞMIYOR";
+  charge_sit = "OFF";
+}
+
+void sendNumberToVP(byte vp1, byte vp2, int number) {
+  byte num_high_byte = (number >> 8) & 0xFF;
+  byte num_low_byte = number & 0xFF;
+  
+  byte packet[] = {0x5A, 0xA5, 0x06, 0x82, vp1, vp2, num_high_byte, num_low_byte};
+
+  for (byte i = 0; i < sizeof(packet); i++) {
+    Serial.write(packet[i]);
+  }
+}
+
+void sendFunction() {
+  unsigned long currentMillis = millis();
+  if (currentMillis - previousMillis >= 300) {
+    previousMillis = currentMillis;
+    sendNumberToVP(0x50, 0x00, kwh);
+  }
+}
+
+void check_button(byte coming) {
+  switch(coming) {
+    case check10A:
+      Serial2.println("st42");
+      break;
+    case check16A:
+      Serial2.println("st68");
+      break;
+    case check24A:
+      Serial2.println("st102");
+      break;
+    case check32A:
+      Serial2.println("st135");
+      break;
+  }
+}
+
+void parsedata(String data) {
+  if (data.startsWith("vo1=")) {
+    voltage1 = data.substring(4).toInt();
+    #ifdef DEBUG 
+    Serial.print("Voltage 1: ");
+    Serial.println(voltage1);
+    #endif
+  } 
+  else if (data.startsWith("vo2=")) {
+    voltage2 = data.substring(4).toInt();
+    #ifdef DEBUG 
+    Serial.print("Voltage 2: ");
+    Serial.println(voltage2);
+    #endif
+  } 
+  else if (data.startsWith("vo3=")) {
+    voltage3 = data.substring(4).toInt();
+    #ifdef DEBUG
+    Serial.print("Voltage 3: ");
+    Serial.println(voltage3);
+    #endif
+  } 
+  else if (data.startsWith("cu1=")) {
+    current1 = data.substring(4).toInt();
+    #ifdef DEBUG
+    Serial.print("Current 1: ");
+    Serial.println(current1);
+    #endif
+  } 
+  else if (data.startsWith("cu2=")) {
+    current2 = data.substring(4).toInt();
+    #ifdef DEBUG
+    Serial.print("Current 2: ");
+    Serial.println(current2);
+    #endif
+  } 
+  else if (data.startsWith("cu3=")) {
+    current3 = data.substring(4).toInt();
+    #ifdef DEBUG
+    Serial.print("Current 3: ");
+    Serial.println(current3);
+    #endif
+  }
+  else if (data.startsWith("tem=")) {
+    temperature = data.substring(4).toInt();
+    #ifdef DEBUG
+    Serial.print("Temperature : ");
+    Serial.println(temperature);
+    #endif
+  }
+  else if (data.startsWith("pvc=")) {
+    coming_pvc = data.substring(4).toInt();
+    #ifdef DEBUG
+    Serial.print("Pvc : ");
+    Serial.println(coming_pvc);
+    #endif
+  }
+    else if (data.startsWith("Cri=")) {
+    coming_critical = data.substring(4).toInt();
+    #ifdef DEBUG
+    Serial.print("Critical : ");
+    Serial.println(coming_critical);
+    #endif
+  }
+
 }

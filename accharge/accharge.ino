@@ -5,7 +5,7 @@
 #include <Wire.h>
 #include "EmonLib.h"     
 
-#define DEBUG
+//#define DEBUG
 EnergyMonitor emon1;
 EnergyMonitor emon2; 
 EnergyMonitor emon3;
@@ -45,19 +45,19 @@ char state = 'z';
 int charging = 0;
 
 double Irms;      
-#define         POS_12V_MAX                 1000                                 // 12V
-#define         POS_12V_MIN                 800                                 // 11V
-#define         POS_9V_MAX                  799                                 // 10V        
-#define         POS_9V_MIN                  650                                 // 8V
-#define         POS_6V_MAX                  649                                 // 7V
-#define         POS_6V_MIN                  341                                 // 5V
-#define         POS_3V_MAX                  273                                 // 4V  
-#define         POS_3V_MIN                  136                                // 2V
+#define         POS_12V_MAX                 1024                                 // 12V
+#define         POS_12V_MIN                 925                                 // 11V
+#define         POS_9V_MAX                  924                                 // 10V        
+#define         POS_9V_MIN                  876                                 // 8V
+#define         POS_6V_MAX                  875                                 // 7V
+#define         POS_6V_MIN                  735                                 // 5V
+#define         POS_3V_MAX                  708                                 // 4V  
+#define         POS_3V_MIN                  656                                // 2V
 
 #define         STATE_A                     1                                   // No EV connected
 #define         STATE_B                     2                                   // EV Connected but not charging
 #define         STATE_C                     3                                   // Charging
-//#define         CHARGE_PWM_DUTY             350
+
 
 #define         _12_VOLTS                   12
 #define         _9_VOLTS                    9
@@ -72,15 +72,6 @@ double Irms;
 void setup() { 
   Serial.begin(9600);
   mySerial.begin(9600);
-
-  emon1.current(A1, 111.1);
-  emon2.current(A2, 111.1);
-  emon3.current(A6, 111.1);
- 
-  emon1.voltage(A3, 234.6, 1.7); // Voltage: (input pin, calibration, phase_shift)
-  emon2.voltage(A4, 234.6, 1.7); // Voltage: (input pin, calibration, phase_shift)
-  emon3.voltage(A5, 234.6, 1.7); // Voltage: (input pin, calibration, phase_shift)
-
 
   InitTimersSafe();
   bool success = SetPinFrequencySafe(CP_OUT, frequency);
@@ -107,9 +98,9 @@ static byte PVC;
 findPeakVoltage();
 PVC = Read_Pilot_Voltage(); 
 
-  current1 = emon1.Irms;
-  current2 = emon2.Irms;
-  current3 = emon3.Irms;
+  current1 = emon1.calcIrms(1480);
+  current2 = emon2.calcIrms(1480);
+  current3 = emon3.calcIrms(1480);
 
   voltage1 = emon1.Vrms;
   voltage2 = emon2.Vrms;
@@ -117,10 +108,10 @@ PVC = Read_Pilot_Voltage();
 
     if(mySerial.available())
   {
-    Serial.println("Serial başladı");
+    //Serial.println("Serial başladi");
     char c = mySerial.read();
     receivedData += c;
-
+    Serial.print(receivedData);
     if (c == '\n') {
       #ifdef DEBUG
       mySerial.println(receivedData);
@@ -132,7 +123,7 @@ PVC = Read_Pilot_Voltage();
   send_data();
   read_temperature();
  #ifdef DEBUG
-  Serial.println(analogRead(A2));
+  //Serial.println(analogRead(A2));
   Serial.print("cu1=");
   Serial.println(current1);
   Serial.print("cu2=");
@@ -272,29 +263,34 @@ counter++;
 }
 
 void parsedata(String data) {
-  if(data.startsWith("st")) {
-    critical_num = data.substring(2).toInt();
-    Serial.print("Critical number: ");
-    Serial.println(critical_num);
+  if(data.startsWith("s")) {
+    critical_num = data.substring(1).toInt();
+    //Serial.print("Critical number: ");
+    //Serial.println(critical_num);
   }
 }
 
 
 void send_data() {
-  mySerial.print("cu1=");
+  mySerial.print("c1");
   mySerial.println(current1);
-  mySerial.print("cu2=");
+  mySerial.print("c2");
   mySerial.println(current2);
-  mySerial.print("cu3=");
+  mySerial.print("c3");
   mySerial.println(current3);
-  mySerial.print("vo1=");
+  mySerial.print("v1");
   mySerial.println(voltage1);
-  mySerial.print("vo2=");
+  mySerial.print("v2");
   mySerial.println(voltage2);
-  mySerial.print("vo3=");
+  mySerial.print("v3");
   mySerial.println(voltage3);
-  mySerial.print("tem=");
+  mySerial.print("te");
   mySerial.println(temperature);
+  mySerial.print("pv");
+  mySerial.println(peak_voltage);
+  mySerial.print("cr");
+  mySerial.println(critical_num);
+
 }
 
 void read_temperature()
