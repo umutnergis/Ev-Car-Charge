@@ -49,7 +49,7 @@ void setup() {
 }
 
 void loop() {
-  // Empty loop as tasks are handled by FreeRTOS
+
 }
 
 void thread1(void* pvParameters) {
@@ -173,25 +173,25 @@ void handleStatus() {
 
 void handleButton1() {
   amper_sit = "10 A";
-  Serial2.println("st42");
+  Serial2.println("s0");
   server.send(200, "text/plain", "OK");
 }
 
 void handleButton2() {
   amper_sit = "16 A";
-  Serial2.println("st68");
+  Serial2.println("s1");
   server.send(200, "text/plain", "OK");
 }
 
 void handleButton3() {
   amper_sit = "24 A";
-  Serial2.println("st102");
+  Serial2.println("s2");
   server.send(200, "text/plain", "OK");
 }
 
 void handleButton4() {
   amper_sit = "32 A";
-  Serial2.println("st135");
+  Serial2.println("s3");
   server.send(200, "text/plain", "OK");
 }
 
@@ -227,16 +227,20 @@ void sendFunction() {
 void check_button(byte coming) {
   switch(coming) {
     case check10A:
-      Serial2.println("s42");
+      Serial2.println("s0");
+      amper_sit = "10 A";
       break;
     case check16A:
-      Serial2.println("s68");
+      Serial2.println("s1");
+      amper_sit = "16 A";
       break;
     case check24A:
-      Serial2.println("s102");
+      Serial2.println("s2");
+      amper_sit = "24 A";
       break;
     case check32A:
-      Serial2.println("s135");
+      Serial2.println("s3");
+      amper_sit = "32 A";
       break;
   }
 }
@@ -263,9 +267,9 @@ void parsedata(String data) {
   else if (data.startsWith("te")) {
     temperature = data.substring(2).toInt();
   }
-  else if (data.startsWith("pv")) {
+  /* else if (data.startsWith("pv")) {
     coming_pvc = data.substring(2).toInt();
-  }
+  } */
   else if (data.startsWith("cr")) {
     coming_critical = data.substring(2).toInt();
   }

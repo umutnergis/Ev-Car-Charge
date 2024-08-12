@@ -15,7 +15,7 @@ EnergyMonitor emon3;
 
 #define rxPin 6
 #define txPin 5
-#define tempertaturepin A7
+#define temperaturepin A7
 
 SoftwareSerial mySerial(rxPin, txPin); 
 String receivedData = "";
@@ -58,11 +58,15 @@ double Irms;
 #define         STATE_B                     2                                   // EV Connected but not charging
 #define         STATE_C                     3                                   // Charging
 
-
 #define         _12_VOLTS                   12
 #define         _9_VOLTS                    9
 #define         _6_VOLTS                    6
 #define         _3_VOLTS                    3
+
+#define         amper_state10              42
+#define         amper_state16              68
+#define         amper_state24              102
+#define         amper_state32              135
 
 #define relay8 8
 #define relay9 9
@@ -90,6 +94,9 @@ void setup() {
   digitalWrite(relay9, LOW); // Relays open
   digitalWrite(relay8, LOW); // Relays open
   digitalWrite(2, LOW); // Bottom LED off
+
+
+  emon1.current(1, 111.1);
 }
 
 void loop() {
@@ -264,7 +271,22 @@ counter++;
 
 void parsedata(String data) {
   if(data.startsWith("s")) {
-    critical_num = data.substring(1).toInt();
+    int coming_ampere = data.substring(1).toInt();
+    switch (coming_ampere)
+    {
+    case 0:
+      critical_num = amper_state10;
+      break;
+    case 1:
+      critical_num = amper_state16;
+      break;
+    case 2:
+      critical_num = amper_state24;
+      break;
+    case 3:
+      critical_num = amper_state32;
+      break;
+    }
     //Serial.print("Critical number: ");
     //Serial.println(critical_num);
   }
@@ -286,8 +308,8 @@ void send_data() {
   mySerial.println(voltage3);
   mySerial.print("te");
   mySerial.println(temperature);
-  mySerial.print("pv");
-  mySerial.println(peak_voltage);
+/*   mySerial.print("pv");
+  mySerial.println(peak_voltage); */
   mySerial.print("cr");
   mySerial.println(critical_num);
 
@@ -295,7 +317,7 @@ void send_data() {
 
 void read_temperature()
 {
-int sensorValue = analogRead(tempertaturepin);
+int sensorValue = analogRead(temperaturepin);
 float voltagetemp = sensorValue * (5.0 / 1023.0);
 temperature = voltagetemp * 100;
 }
