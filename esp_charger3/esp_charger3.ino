@@ -81,8 +81,8 @@ void thread2(void* pvParameters) {
   for(;;) {
     dnsServer.processNextRequest();
     server.handleClient();
-    vTaskDelay(pdMS_TO_TICKS(10));
-    temp = temperatureRead();  
+    vTaskDelay(pdMS_TO_TICKS(50));
+    
   }
 
 }
@@ -101,11 +101,11 @@ void acces_point() {
     }
   }
 
-  // Set WiFi mode and increase power
+  
   WiFi.mode(WIFI_AP);
   WiFi.setTxPower(WIFI_POWER_19_5dBm);
 
-  // Start AP on the best channel
+  
   WiFi.softAP(ssid, password, bestChannel);
   WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
   
@@ -159,7 +159,7 @@ void handleRoot() {
         <input type="text" id="statusInput" value="Durum Bekleniyor..." disabled>
     </div>
     <script>
-        function fetchNumber(){fetch('/number').then(e=>e.text()).then(e=>{document.getElementById('number').innerText=e}).catch(e=>console.error('Hata:',e))}setInterval(fetchNumber,500);function fetchStatus(){fetch('/status').then(e=>e.text()).then(e=>{document.getElementById('statusInput').value=e}).catch(e=>console.error('Durum alma hatası:',e))}setInterval(fetchStatus,200);function sendCommand(e){fetch('/'+e).then(e=>e.text()).then(t=>{console.log('Komut gönderildi:',e)}).catch(e=>console.error('Komut gönderme hatası:',e))}
+        function fetchNumber(){fetch('/number').then(e=>e.text()).then(e=>{document.getElementById('number').innerText=e}).catch(e=>console.error('Hata:',e))}setInterval(fetchNumber,200);function fetchStatus(){fetch('/status').then(e=>e.text()).then(e=>{document.getElementById('statusInput').value=e}).catch(e=>console.error('Durum alma hatası:',e))}setInterval(fetchStatus,200);function sendCommand(e){fetch('/'+e).then(e=>e.text()).then(t=>{console.log('Komut gönderildi:',e)}).catch(e=>console.error('Komut gönderme hatası:',e))}
     </script>
 </body>
 </html>
@@ -172,7 +172,7 @@ void handleNumber() {
 }
 
 void handleStatus() {
-  String data = ("CCri " + coming_critical + " Aktif Amper " + amper_sit + "Sıcaklık " +temp);
+  String data = ("CCri " + String(coming_critical) + " Aktif Amper " + amper_sit + "Sıcaklık " + String(temp));
   server.send(200, "application/json", data);
 }
 
@@ -226,6 +226,7 @@ void sendFunction() {
   if (currentMillis - previousMillis >= 300) {
     previousMillis = currentMillis;
     sendNumberToVP(0x50, 0x00, kwh);
+    temp = temperatureRead();  
     #ifdef DEBUG
     Serial.println("Data sent to VP");
     #endif

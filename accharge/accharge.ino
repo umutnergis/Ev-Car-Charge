@@ -231,7 +231,7 @@ counter++;
 
 
 }
-// function that finds the peak voltage read by pin A0
+
   int findPeakVoltage() {
     int i = 0;
     current_voltage = 0;
