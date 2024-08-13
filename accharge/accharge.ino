@@ -68,9 +68,9 @@ double Irms;
 #define         amper_state24              102
 #define         amper_state32              135
 
-#define         phase1                     1
-#define         phase2                     6
-#define         phase3                     2
+#define         phase1_current             1
+#define         phase2_current             6
+#define         phase3_current             2
 
 #define relay8 8
 #define relay9 9
@@ -99,9 +99,9 @@ void setup() {
   digitalWrite(relay8, LOW); 
   digitalWrite(2, LOW); 
 
-  emon1.current(phase1, 111.1);
-  emon2.current(phase2, 111.1);
-  emon3.current(phase3, 111.1);
+  emon1.current(phase1_current, 111.1);
+  emon2.current(phase2_current, 111.1);
+  emon3.current(phase3_current, 111.1);
 }
 
 void loop() {
@@ -114,9 +114,9 @@ PVC = Read_Pilot_Voltage();
   current2 = emon2.calcIrms(1480);
   current3 = emon3.calcIrms(1480);
 
-  voltage1 = emon1.Vrms;
+/*   voltage1 = emon1.Vrms;
   voltage2 = emon2.Vrms;
-  voltage3 = emon3.Vrms;
+  voltage3 = emon3.Vrms; */
 
     if(mySerial.available())
   {
@@ -248,10 +248,7 @@ counter++;
 
   byte Read_Pilot_Voltage()
 {
- 
   static int Previous_Value = _12_VOLTS;
-
- 
     if(peak_voltage > POS_12V_MIN and peak_voltage < POS_12V_MAX) {
       Previous_Value = _12_VOLTS; 
       return(_12_VOLTS); 
