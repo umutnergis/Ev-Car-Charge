@@ -2,6 +2,7 @@
 #include <WebServer.h>
 #include <DNSServer.h>
 #include <string.h>
+#include "esp_system.h"
 
 //#define DEBUG
 #define check10A 0x20 
@@ -24,8 +25,9 @@ WebServer server(80);
 
 String receivedData = "";
 int kwh = 0;
+float temp;
 int voltage1 = 0, voltage2 = 0, voltage3 = 0;
-int current1 = 0, current2 = 0, current3 = 0;
+double current1 = 0, current2 = 0, current3 = 0;
 int temperature = 0;
 int coming_pvc = 0;
 int coming_critical = 0;
@@ -54,6 +56,7 @@ void loop() {
 
 void thread1(void* pvParameters) {
   for(;;) {
+    
     if(Serial2.available()) {
       char c = Serial2.read();
       receivedData += c;
@@ -63,8 +66,8 @@ void thread1(void* pvParameters) {
       }
     }
 
-    //kwh = ((230*current1*0.9)+(230*current2*0.9)+(230*current3*0.9)); 
-    kwh++;
+    kwh = ((230*current1*0.9)+(230*current2*0.9)+(230*current3*0.9)); 
+    
     if(Serial.available()) {
       byte incomingByte = Serial.read();
       check_button(incomingByte);
@@ -79,11 +82,13 @@ void thread2(void* pvParameters) {
     dnsServer.processNextRequest();
     server.handleClient();
     vTaskDelay(pdMS_TO_TICKS(10));
+    temp = temperatureRead();  
   }
+
 }
 
 void acces_point() {
-  // Scan for the best channel
+
   int bestChannel = 1;
   long bestRSSI = -100;
   for (int channel = 1; channel <= 11; channel++) {
@@ -154,7 +159,7 @@ void handleRoot() {
         <input type="text" id="statusInput" value="Durum Bekleniyor..." disabled>
     </div>
     <script>
-        function fetchNumber(){fetch('/number').then(e=>e.text()).then(e=>{document.getElementById('number').innerText=e}).catch(e=>console.error('Hata:',e))}setInterval(fetchNumber,500);function fetchStatus(){fetch('/status').then(e=>e.text()).then(e=>{document.getElementById('statusInput').value=e}).catch(e=>console.error('Durum alma hatası:',e))}setInterval(fetchStatus,300);function sendCommand(e){fetch('/'+e).then(e=>e.text()).then(t=>{console.log('Komut gönderildi:',e)}).catch(e=>console.error('Komut gönderme hatası:',e))}
+        function fetchNumber(){fetch('/number').then(e=>e.text()).then(e=>{document.getElementById('number').innerText=e}).catch(e=>console.error('Hata:',e))}setInterval(fetchNumber,500);function fetchStatus(){fetch('/status').then(e=>e.text()).then(e=>{document.getElementById('statusInput').value=e}).catch(e=>console.error('Durum alma hatası:',e))}setInterval(fetchStatus,200);function sendCommand(e){fetch('/'+e).then(e=>e.text()).then(t=>{console.log('Komut gönderildi:',e)}).catch(e=>console.error('Komut gönderme hatası:',e))}
     </script>
 </body>
 </html>
@@ -167,7 +172,7 @@ void handleNumber() {
 }
 
 void handleStatus() {
-  String data = "{\"number\":" + String(kwh) + ",\"status\":\"" + charge_sit + " " + amper_sit + "\"}";
+  String data = ("CCri " + coming_critical + " Aktif Amper " + amper_sit + "Sıcaklık " +temp);
   server.send(200, "application/json", data);
 }
 
@@ -221,6 +226,9 @@ void sendFunction() {
   if (currentMillis - previousMillis >= 300) {
     previousMillis = currentMillis;
     sendNumberToVP(0x50, 0x00, kwh);
+    #ifdef DEBUG
+    Serial.println("Data sent to VP");
+    #endif
   }
 }
 
@@ -229,18 +237,30 @@ void check_button(byte coming) {
     case check10A:
       Serial2.println("s0");
       amper_sit = "10 A";
+      #ifdef DEBUG
+      Serial.println("10A buton algılandı");
+      #endif
       break;
     case check16A:
       Serial2.println("s1");
       amper_sit = "16 A";
+      #ifdef DEBUG
+      Serial.println("16A buton algılandı");
+      #endif
       break;
     case check24A:
       Serial2.println("s2");
       amper_sit = "24 A";
+      #ifdef DEBUG
+      Serial.println("24A buton algılandı");
+      #endif
       break;
     case check32A:
       Serial2.println("s3");
       amper_sit = "32 A";
+      #ifdef DEBUG
+      Serial.println("32A buton algılandı");
+      #endif
       break;
   }
 }
@@ -248,29 +268,65 @@ void check_button(byte coming) {
 void parsedata(String data) {
   if (data.startsWith("v1")) {
     voltage1 = data.substring(2).toInt();
+    #ifdef DEBUG
+    Serial.print("Voltage 1: ");
+    Serial.println(voltage1);
+    #endif
   } 
   else if (data.startsWith("v2")) {
     voltage2 = data.substring(2).toInt();
+    #ifdef DEBUG
+    Serial.print("Voltage 2: ");
+    Serial.println(voltage2);
+    #endif
   } 
   else if (data.startsWith("v3")) {
     voltage3 = data.substring(2).toInt();
+    #ifdef DEBUG
+    Serial.print("Voltage 3: ");
+    Serial.println(voltage3);
+    #endif
   } 
   else if (data.startsWith("c1")) {
-    current1 = data.substring(2).toInt();
+    current1 = data.substring(2).toFloat();
+    #ifdef DEBUG
+    Serial.print("Current 1: ");
+    Serial.println(current1);
+    #endif
   } 
   else if (data.startsWith("c2")) {
-    current2 = data.substring(2).toInt();
+    current2 = data.substring(2).toFloat();
+    #ifdef DEBUG
+    Serial.print("Current 2: ");
+    Serial.println(current2);
+    #endif
   } 
   else if (data.startsWith("c3")) {
-    current3 = data.substring(2).toInt();
+    current3 = data.substring(2).toFloat();
+    #ifdef DEBUG
+    Serial.print("Current 3: ");
+    Serial.println(current3);
+    #endif
   }
   else if (data.startsWith("te")) {
     temperature = data.substring(2).toInt();
+    #ifdef DEBUG
+    Serial.print("Temperature: ");
+    Serial.println(temperature);
+    #endif
   }
   /* else if (data.startsWith("pv")) {
     coming_pvc = data.substring(2).toInt();
+    #ifdef DEBUG
+    Serial.print("Peak Voltage: ");
+    Serial.println(coming_pvc);
+    #endif
   } */
   else if (data.startsWith("cr")) {
     coming_critical = data.substring(2).toInt();
+    #ifdef DEBUG
+    Serial.print("Critical number: ");
+    Serial.println(coming_critical);
+    #endif
   }
 }

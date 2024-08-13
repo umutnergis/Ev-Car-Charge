@@ -20,9 +20,9 @@ EnergyMonitor emon3;
 SoftwareSerial mySerial(rxPin, txPin); 
 String receivedData = "";
 
-int current1 = 0;
-int current2 = 0;
-int current3 = 0;
+double current1 = 0;
+double current2 = 0;
+double current3 = 0;
 int voltage1 = 0;
 int voltage2 = 0;
 int voltage3 = 0;
@@ -68,6 +68,10 @@ double Irms;
 #define         amper_state24              102
 #define         amper_state32              135
 
+#define         phase1                     1
+#define         phase2                     6
+#define         phase3                     2
+
 #define relay8 8
 #define relay9 9
 
@@ -91,12 +95,13 @@ void setup() {
   pinMode(relay8, OUTPUT);
   pinMode(relay9, OUTPUT);
 
-  digitalWrite(relay9, LOW); // Relays open
-  digitalWrite(relay8, LOW); // Relays open
-  digitalWrite(2, LOW); // Bottom LED off
+  digitalWrite(relay9, LOW); 
+  digitalWrite(relay8, LOW); 
+  digitalWrite(2, LOW); 
 
-
-  emon1.current(1, 111.1);
+  emon1.current(phase1, 111.1);
+  emon2.current(phase2, 111.1);
+  emon3.current(phase3, 111.1);
 }
 
 void loop() {
@@ -115,7 +120,6 @@ PVC = Read_Pilot_Voltage();
 
     if(mySerial.available())
   {
-    //Serial.println("Serial başladi");
     char c = mySerial.read();
     receivedData += c;
     Serial.print(receivedData);
@@ -287,29 +291,31 @@ void parsedata(String data) {
       critical_num = amper_state32;
       break;
     }
-    //Serial.print("Critical number: ");
-    //Serial.println(critical_num);
+    #ifdef DEBUG
+    Serial.print("Critical number: ");
+    Serial.println(critical_num);
+    #endif
   }
 }
 
 
 void send_data() {
   mySerial.print("c1");
-  mySerial.println(current1);
+  mySerial.println(current1,2);
   mySerial.print("c2");
-  mySerial.println(current2);
+  mySerial.println(current2,2);
   mySerial.print("c3");
-  mySerial.println(current3);
-  mySerial.print("v1");
+  mySerial.println(current3,2);
+/*   mySerial.print("v1");
   mySerial.println(voltage1);
   mySerial.print("v2");
   mySerial.println(voltage2);
   mySerial.print("v3");
   mySerial.println(voltage3);
+  mySerial.print("pv");
+  mySerial.println(peak_voltage); */
   mySerial.print("te");
   mySerial.println(temperature);
-/*   mySerial.print("pv");
-  mySerial.println(peak_voltage); */
   mySerial.print("cr");
   mySerial.println(critical_num);
 
