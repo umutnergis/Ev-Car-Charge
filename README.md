@@ -11,7 +11,8 @@
 ## Eklenecek Özellikler
 
 - **Şifre Kontrol**:
-- **Şifre Kontrol**:
+- **Mobil Uygulama**:
+
 
 ## Proje Görselleri
 ![Proje Demo](https://github.com/umutnergis/Ev-Car-Charge/blob/main/Screen_gif/dwin.gif)

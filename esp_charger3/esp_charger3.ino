@@ -23,7 +23,8 @@ IPAddress apIP(192, 168, 4, 1);
 DNSServer dnsServer;
 WebServer server(80);
 
-String receivedData = "";
+String receivedData = "";  
+
 float kwh = 0;
 float temp;
 int voltage1 = 0, voltage2 = 0, voltage3 = 0;
