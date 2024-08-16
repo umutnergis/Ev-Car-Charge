@@ -1,3 +1,4 @@
 Esp tarafında eklenecekler:
     Eğer bir tuşa basıldı veya mobil uygulama tarafından bilgi gönderildi ise,tekrar gelen veriyi kontrol et.
     Eğer atmelden gelen veri gönderilen veri ile eşleşmiyorsa tekrar gönder. Yani kesin bir değişim olsun.
+    Socketten bilgi gelince amper değişimi olur ise ekranda da değişim olsun.

@@ -1,0 +1,4 @@
+                                                Kullanıcının iki seçeneği var
+    Tak çalıştır. Sadece amper seçimleri olacak                             Aynı zamanda wifi kullanıcıları olacak 
+    Ekran üzerinde Kwh gösterisi sistemi izleyebilecek.                     Ekran + telefon mobil uygulamasından izleyebilecek.
+                                                                            Eğer wifi kullanıcısı ise 

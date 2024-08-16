@@ -20,7 +20,7 @@ EnergyMonitor emon3;
 SoftwareSerial mySerial(rxPin, txPin);
 String receivedData = "";
 
-const int SAMPLES = 1000;
+const int SAMPLES = 1000; // Bunu daha düşük yapabilirsin. Peak voltage bulunması için gerekli süre çoğaldığından dolayı.
 int sample_count = 0;
 int peak_voltage = 0;
 
@@ -41,7 +41,6 @@ float cp_pwm = 255;
 int frequency = 1000;
 
 void findPeakVoltage();
-int peak_voltage = 0;
 int current_voltage = 0;
 byte Read_Pilot_Voltage();
 char state = 'z';
@@ -124,7 +123,7 @@ void loop()
   {
     char c = mySerial.read();
     receivedData += c;
-    Serial.print(receivedData);
+    //Serial.print(receivedData);
     if (c == '\n')
     {
 #ifdef DEBUG
@@ -222,7 +221,6 @@ void loop()
 
 void findPeakVoltage()
 {
-
   if (sample_count < SAMPLES)
   {
     current_voltage = analogRead(CP_IN);
