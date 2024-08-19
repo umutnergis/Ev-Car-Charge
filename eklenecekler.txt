@@ -2,3 +2,11 @@ Esp tarafında eklenecekler:
     Eğer bir tuşa basıldı veya mobil uygulama tarafından bilgi gönderildi ise,tekrar gelen veriyi kontrol et.
     Eğer atmelden gelen veri gönderilen veri ile eşleşmiyorsa tekrar gönder. Yani kesin bir değişim olsun.
     Socketten bilgi gelince amper değişimi olur ise ekranda da değişim olsun.
+    Kullanılabilecek ağları göster.
+    Kullanıcının son seçtiği amper değerini hafızasında tutması gerekiyor. Kapatıp açarsa da son amperden tekrar başlamalı.
+    Eeprom kurulup çalıştırılmalı.Kullanıcı adı,şifre 
+
+
+OTA yapılacak. Bu sunucu üzerinden .bin dosyasını alacak ve kendini güncelleyebilecek.
+Uzaktan hata kontrolü için websocket ile bir panel üzerinden serial port ekranını gönderecek. Olası bir sorunda sorunun,
+nerede olduğunu anlayabilmemiz için.
